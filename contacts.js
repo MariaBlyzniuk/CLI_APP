@@ -1,9 +1,8 @@
 const fs = require('fs').promises;
 const path = require('path')
+const uuid = require('uuid');
 
-const contactsPath = path.join(__dirname, './db/contacts.json');
-// console.log(contactsPath);
-
+const contactsPath = path.resolve('./db/contacts.json');
 
 async function listContacts() {
     const dataString = await fs.readFile(contactsPath, 'utf8');
@@ -11,34 +10,36 @@ async function listContacts() {
     return data;
 }
 
-async function getContactById(id) {
-    const allContacts = await listContacts();
-    const contact = allContacts.find(contact => contact.id === id);
-    return contact ? contact : null;
+
+async function getContactById(contactId) {
+    const data = JSON.parse(await fs.readFile(contactsPath, "utf8"));
+    return data.find((contact) => contact.id === contactId);
+
 }
 
-async function removeContact(id) {
-    const allContacts = await listContacts();
-    const index = allContacts.findIndex(contact => contact.id === id);
-
-    const deleteContact = allContacts[index];
-    if(index !== -1) {
-        allContacts.splice(index, 1);
-        await fs.writeFile(contactsPath, JSON.stringify(allContacts));
+async function removeContact(contactId) {
+    try {
+    const data = JSON.parse(await fs.readFile(contactsPath, "utf8"));
+    await fs.writeFile(
+        contactsPath,
+        JSON.stringify(data.filter((contact) => contact.id !== contactId)),
+        "utf8"
+    );
+    console.log("contact has been removed");
+    } catch (error) {
+    console.log("oops, something wrong");
     }
-    return deleteContact ? deleteContact : null;
 }
 
 async function addContact(name, email, phone) {
-    const newContact = {
-        name: name,
-        email: email,
-        phone: phone
-    };
-    const allContacts = await listContacts();
-    allContacts.push(newContact);
-
-    await fs.writeFile(contactsPath, JSON.stringify(allContacts));
+    try {
+    const data = JSON.parse(await fs.readFile(contactsPath, "utf8"));
+    data.push({ id: uuid.v4(), name, email, phone });
+    await fs.writeFile(contactsPath, JSON.stringify(data), "utf8");
+    console.log("contact has been added");
+    } catch (error) {
+    console.log("oops, something wrong");
+    }
 }
 
 
@@ -47,5 +48,5 @@ module.exports = {
     listContacts,
     getContactById,
     removeContact,
-    addContact
+    addContact,
 };
